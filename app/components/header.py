@@ -2,6 +2,7 @@ import reflex as rx
 
 
 def header() -> rx.Component:
+    """Renders the top header bar of the application."""
     return rx.el.header(
         rx.el.div(
             rx.el.h1(

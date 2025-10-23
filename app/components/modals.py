@@ -10,6 +10,7 @@ def _form_input(
     on_change: rx.event.EventHandler,
     type: str = "text",
 ) -> rx.Component:
+    """Creates a styled form input with a label."""
     return rx.el.div(
         rx.el.label(label, class_name="text-sm font-medium text-gray-700"),
         rx.el.input(
@@ -25,6 +26,7 @@ def _form_input(
 
 
 def teacher_modal_content() -> rx.Component:
+    """The content for the 'Add/Edit Teacher' modal."""
     return rx.el.form(
         rx.el.h2(
             rx.cond(State.is_editing, "Edit Teacher", "Add New Teacher"),
@@ -64,6 +66,7 @@ def teacher_modal_content() -> rx.Component:
 
 
 def class_modal_content() -> rx.Component:
+    """The content for the 'Add/Edit Class' modal."""
     return rx.el.form(
         rx.el.h2(
             rx.cond(State.is_editing, "Edit Class", "Add New Class"),
@@ -110,6 +113,7 @@ def class_modal_content() -> rx.Component:
 
 
 def schedule_modal_content() -> rx.Component:
+    """The content for the 'Add/Edit Schedule' modal."""
     return rx.el.form(
         rx.el.h2(
             rx.cond(State.is_editing, "Edit Schedule", "Add New Schedule"),
@@ -185,6 +189,7 @@ def schedule_modal_content() -> rx.Component:
 
 
 def app_modal() -> rx.Component:
+    """The main application modal container. It dynamically renders content based on the modal type."""
     return rx.radix.primitives.dialog.root(
         rx.radix.primitives.dialog.portal(
             rx.radix.primitives.dialog.overlay(
@@ -208,6 +213,7 @@ def app_modal() -> rx.Component:
 
 
 def rule_modal_content() -> rx.Component:
+    """The content for the 'Add/Edit Rule' modal."""
     return rx.el.form(
         rx.el.h2(
             rx.cond(State.is_editing, "Edit Rule", "Add New Rule"),
