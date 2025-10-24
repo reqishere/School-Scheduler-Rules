@@ -40,6 +40,13 @@ def teacher_modal_content() -> rx.Component:
             State.set_teacher_name,
         ),
         _form_input(
+            "Subject Expertise",
+            "teacher_subject",
+            "e.g. Math, Science",
+            State.teacher_subject,
+            State.set_teacher_subject,
+        ),
+        _form_input(
             "Email Address",
             "teacher_email",
             "e.g. john.doe@school.com",
@@ -202,6 +209,7 @@ def app_modal() -> rx.Component:
                     ("class", class_modal_content()),
                     ("schedule", schedule_modal_content()),
                     ("rule", rule_modal_content()),
+                    ("subject_requirement", subject_requirement_modal_content()),
                     rx.el.div(),
                 ),
                 class_name="bg-white p-6 rounded-xl shadow-lg w-full max-w-md m-4 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50",
@@ -258,4 +266,54 @@ def rule_modal_content() -> rx.Component:
             class_name="mt-5 sm:mt-6 grid grid-cols-2 gap-3",
         ),
         on_submit=State.save_rule,
+    )
+
+
+def subject_requirement_modal_content() -> rx.Component:
+    """The content for the 'Add/Edit Subject Requirement' modal."""
+    return rx.el.form(
+        rx.el.h2(
+            rx.cond(
+                State.is_editing,
+                "Edit Subject Requirement",
+                "Add New Subject Requirement",
+            ),
+            class_name="text-lg font-semibold text-gray-900 mb-4",
+        ),
+        rx.el.div(
+            rx.el.label("Class", class_name="text-sm font-medium text-gray-700"),
+            rx.el.select(
+                rx.el.option("Select a class", value="", disabled=True),
+                rx.foreach(
+                    State.classes,
+                    lambda cls: rx.el.option(cls["name"], value=cls["id"].to_string()),
+                ),
+                value=State.subject_requirement_class_id,
+                on_change=State.set_subject_requirement_class_id,
+                class_name="mt-1 block w-full rounded-lg border-gray-200 bg-white px-4 py-2 text-gray-700 shadow-sm focus:border-orange-500 focus:ring-orange-500",
+            ),
+            class_name="mb-4",
+        ),
+        _form_input(
+            "Required Subject",
+            "subject_requirement_subject",
+            "e.g. Math",
+            State.subject_requirement_subject,
+            State.set_subject_requirement_subject,
+        ),
+        rx.el.div(
+            rx.el.button(
+                "Cancel",
+                on_click=State.close_modal,
+                type="button",
+                class_name="w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2",
+            ),
+            rx.el.button(
+                "Save Requirement",
+                type="submit",
+                class_name="w-full justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2",
+            ),
+            class_name="mt-5 sm:mt-6 grid grid-cols-2 gap-3",
+        ),
+        on_submit=State.save_subject_requirement,
     )

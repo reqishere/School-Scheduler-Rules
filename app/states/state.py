@@ -1,11 +1,13 @@
 import reflex as rx
 from typing import TypedDict, Literal
+import asyncio
 
 
 class Teacher(TypedDict):
     id: int
     name: str
     email: str
+    subject: str
 
 
 class Class(TypedDict):
@@ -30,14 +32,39 @@ class Rule(TypedDict):
     min_hours: int
 
 
-ModalType = Literal["teacher", "class", "schedule", "rule", ""]
+class SubjectRequirement(TypedDict):
+    """Represents a requirement that a class must have a certain subject scheduled."""
+
+    id: int
+    class_id: int
+    subject: str
+
+
+ModalType = Literal["teacher", "class", "schedule", "rule", "subject_requirement", ""]
 
 
 class State(rx.State):
+    """The main state for the application, holding all data and business logic."""
+
     teachers: list[Teacher] = [
-        {"id": 1, "name": "John Doe", "email": "john.doe@example.com"},
-        {"id": 2, "name": "Jane Smith", "email": "jane.smith@example.com"},
-        {"id": 3, "name": "Peter Jones", "email": "peter.jones@example.com"},
+        {
+            "id": 1,
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "subject": "Math",
+        },
+        {
+            "id": 2,
+            "name": "Jane Smith",
+            "email": "jane.smith@example.com",
+            "subject": "History",
+        },
+        {
+            "id": 3,
+            "name": "Peter Jones",
+            "email": "peter.jones@example.com",
+            "subject": "Science",
+        },
     ]
     classes: list[Class] = [
         {"id": 1, "name": "Algebra 101", "subject": "Math", "duration": 60},
@@ -49,12 +76,17 @@ class State(rx.State):
         {"id": 1, "teacher_id": 1, "min_hours": 10},
         {"id": 2, "teacher_id": 2, "min_hours": 8},
     ]
+    subject_requirements: list[SubjectRequirement] = [
+        {"id": 1, "class_id": 1, "subject": "Math"},
+        {"id": 2, "class_id": 2, "subject": "History"},
+    ]
     show_modal: bool = False
     modal_type: ModalType = ""
     is_editing: bool = False
     editing_id: int | None = None
     teacher_name: str = ""
     teacher_email: str = ""
+    teacher_subject: str = ""
     class_name: str = ""
     class_subject: str = ""
     class_duration: str = "60"
@@ -64,10 +96,16 @@ class State(rx.State):
     schedule_start_time: str = "09:00"
     rule_teacher_id: str = ""
     rule_min_hours: str = ""
+    subject_requirement_class_id: str = ""
+    subject_requirement_subject: str = ""
+    is_generating_schedule: bool = False
+    generation_progress: int = 0
+    generation_message: str = ""
     _next_teacher_id: int = 4
     _next_class_id: int = 4
     _next_schedule_id: int = 1
     _next_rule_id: int = 3
+    _next_subject_requirement_id: int = 3
 
     @rx.var
     def current_page(self) -> str:
@@ -101,10 +139,12 @@ class State(rx.State):
         return compliant_teachers / total_teachers_with_rules * 100
 
     def _create_teacher(self):
+        """Helper to create a new teacher."""
         new_teacher: Teacher = {
             "id": self._next_teacher_id,
             "name": self.teacher_name,
             "email": self.teacher_email,
+            "subject": self.teacher_subject,
         }
         self.teachers.append(new_teacher)
         self._next_teacher_id += 1
@@ -115,6 +155,7 @@ class State(rx.State):
                 if teacher["id"] == self.editing_id:
                     self.teachers[i]["name"] = self.teacher_name
                     self.teachers[i]["email"] = self.teacher_email
+                    self.teachers[i]["subject"] = self.teacher_subject
                     break
 
     @rx.event
@@ -189,7 +230,52 @@ class State(rx.State):
 
     @rx.event
     def delete_rule(self, rule_id: int):
+        """Deletes a rule by its ID."""
         self.rules = [r for r in self.rules if r["id"] != rule_id]
+
+    def _create_subject_requirement(self):
+        """Helper to create a new subject requirement."""
+        new_req: SubjectRequirement = {
+            "id": self._next_subject_requirement_id,
+            "class_id": int(self.subject_requirement_class_id),
+            "subject": self.subject_requirement_subject,
+        }
+        self.subject_requirements.append(new_req)
+        self._next_subject_requirement_id += 1
+
+    def _update_subject_requirement(self):
+        """Helper to update an existing subject requirement."""
+        if self.editing_id is not None:
+            for i, req in enumerate(self.subject_requirements):
+                if req["id"] == self.editing_id:
+                    self.subject_requirements[i]["class_id"] = int(
+                        self.subject_requirement_class_id
+                    )
+                    self.subject_requirements[i]["subject"] = (
+                        self.subject_requirement_subject
+                    )
+                    break
+
+    @rx.event
+    def save_subject_requirement(self):
+        """Saves a new or existing subject requirement."""
+        if (
+            not self.subject_requirement_class_id
+            or not self.subject_requirement_subject
+        ):
+            return rx.toast("Please select a class and enter a subject.")
+        if self.is_editing:
+            self._update_subject_requirement()
+        else:
+            self._create_subject_requirement()
+        return State.close_modal()
+
+    @rx.event
+    def delete_subject_requirement(self, req_id: int):
+        """Deletes a subject requirement by its ID."""
+        self.subject_requirements = [
+            r for r in self.subject_requirements if r["id"] != req_id
+        ]
 
     def _calculate_end_time(self, start_time: str, duration_minutes: int) -> str:
         from datetime import datetime, timedelta
@@ -294,11 +380,84 @@ class State(rx.State):
 
     @rx.event
     def delete_schedule(self, schedule_id: int):
+        """Deletes a schedule by its ID."""
         self.schedules = [s for s in self.schedules if s["id"] != schedule_id]
 
+    @rx.event(background=True)
+    async def generate_schedule(self):
+        """Automatically generates schedules based on requirements and constraints."""
+        import random
+
+        async with self:
+            self.is_generating_schedule = True
+            self.schedules.clear()
+            self.generation_progress = 0
+            self.generation_message = "Starting schedule generation..."
+        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+        time_slots = [f"{h:02d}:00" for h in range(8, 17)]
+        total_requirements = len(self.subject_requirements)
+        generated_count = 0
+        for req in self.subject_requirements:
+            await asyncio.sleep(0.5)
+            async with self:
+                self.generation_message = (
+                    f"Processing requirement for class ID {req['class_id']}..."
+                )
+            target_class_id = req["class_id"]
+            target_subject = req["subject"]
+            target_class = next(
+                (c for c in self.classes if c["id"] == target_class_id), None
+            )
+            if not target_class:
+                continue
+            eligible_teachers = [
+                t for t in self.teachers if t["subject"] == target_subject
+            ]
+            random.shuffle(eligible_teachers)
+            scheduled = False
+            for teacher in eligible_teachers:
+                random.shuffle(days)
+                random.shuffle(time_slots)
+                for day in days:
+                    for start_time in time_slots:
+                        end_time = self._calculate_end_time(
+                            start_time, target_class["duration"]
+                        )
+                        if not self._check_conflict(
+                            start_time, end_time, teacher["id"], day
+                        ):
+                            async with self:
+                                new_schedule: Schedule = {
+                                    "id": self._next_schedule_id,
+                                    "class_id": target_class_id,
+                                    "teacher_id": teacher["id"],
+                                    "day_of_week": day,
+                                    "start_time": start_time,
+                                    "end_time": end_time,
+                                }
+                                self.schedules.append(new_schedule)
+                                self._next_schedule_id += 1
+                            scheduled = True
+                            break
+                    if scheduled:
+                        break
+                if scheduled:
+                    break
+            async with self:
+                generated_count += 1
+                self.generation_progress = int(
+                    generated_count / total_requirements * 100
+                )
+        async with self:
+            self.generation_message = "Schedule generation complete!"
+            await asyncio.sleep(2)
+            self.is_generating_schedule = False
+
     def _reset_form_fields(self):
+        """Resets all form fields to their default values."""
         self.teacher_name = ""
         self.teacher_email = ""
+        self.teacher_subject = ""
         self.class_name = ""
         self.class_subject = ""
         self.class_duration = "60"
@@ -308,6 +467,8 @@ class State(rx.State):
         self.schedule_start_time = "09:00"
         self.rule_teacher_id = ""
         self.rule_min_hours = ""
+        self.subject_requirement_class_id = ""
+        self.subject_requirement_subject = ""
         self.editing_id = None
         self.is_editing = False
 
@@ -324,6 +485,7 @@ class State(rx.State):
                 if teacher:
                     self.teacher_name = teacher["name"]
                     self.teacher_email = teacher["email"]
+                    self.teacher_subject = teacher["subject"]
             elif modal_type == "class":
                 _class = next((c for c in self.classes if c["id"] == item_id), None)
                 if _class:
@@ -342,6 +504,13 @@ class State(rx.State):
                 if rule:
                     self.rule_teacher_id = str(rule["teacher_id"])
                     self.rule_min_hours = str(rule["min_hours"])
+            elif modal_type == "subject_requirement":
+                req = next(
+                    (r for r in self.subject_requirements if r["id"] == item_id), None
+                )
+                if req:
+                    self.subject_requirement_class_id = str(req["class_id"])
+                    self.subject_requirement_subject = req["subject"]
 
     @rx.event
     def close_modal(self):

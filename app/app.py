@@ -6,6 +6,7 @@ from app.pages import (
     classes_page,
     schedules_page,
     rules_page,
+    subject_requirements_page,
 )
 
 app = rx.App(

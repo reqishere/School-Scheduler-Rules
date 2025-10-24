@@ -33,6 +33,7 @@ def sidebar() -> rx.Component:
             nav_item("Classes", "/classes", "book-open"),
             nav_item("Schedules", "/schedules", "calendar-check"),
             nav_item("Rules", "/rules", "gavel"),
+            nav_item("Subject Requirements", "/subject_requirements", "book-check"),
             class_name="flex-1 overflow-auto py-2 grid items-start px-4 text-sm font-medium",
         ),
         class_name="hidden border-r bg-gray-50/40 md:block w-64",

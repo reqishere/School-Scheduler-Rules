@@ -1,4 +1,4 @@
-# School Scheduler CRUD Application - Project Plan ✅
+# School Scheduler CRUD Application - Project Plan
 
 ## Overview
 Building a school scheduling system with teacher assignments and configurable rules (minimum hours per teacher, class assignments, etc.)
@@ -25,12 +25,20 @@ Building a school scheduling system with teacher assignments and configurable ru
 - [x] Add dashboard with statistics (total schedules, teachers, rule compliance)
 - [x] Implement rule enforcement when creating/updating schedules
 
-## Project Complete! 🎉
+## Phase 4: Auto-Assignment and Subject Requirements ✅
+- [x] Add subject requirements configuration (which subjects each class must have per week)
+- [x] Build auto-assignment algorithm that distributes teachers across classes
+- [x] Implement conflict-free scheduling that respects teacher availability
+- [x] Add "Generate Schedule" button with progress feedback
 
-All features implemented:
-- ✅ Full CRUD for Teachers, Classes, Schedules, and Rules
-- ✅ Teacher assignment with conflict detection
-- ✅ Rule validation engine with minimum hours enforcement
-- ✅ Real-time compliance tracking and visualization
-- ✅ Interactive dashboard with statistics
-- ✅ Modern SaaS-style UI with smooth interactions
+## Phase 5: Subject Rules CRUD Interface
+- [ ] Create UI for managing subject requirements per class
+- [ ] Add validation to ensure required subjects are scheduled
+- [ ] Display visual indicators showing which subjects are missing
+- [ ] Build compliance report showing subject coverage
+
+## Phase 6: Enhanced Auto-Assignment Features
+- [ ] Implement intelligent teacher-subject matching based on expertise
+- [ ] Add constraint solver to optimize schedule generation
+- [ ] Build preview mode before applying generated schedules
+- [ ] Add ability to regenerate or adjust auto-generated schedules

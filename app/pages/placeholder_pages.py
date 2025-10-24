@@ -125,6 +125,28 @@ def dashboard_page() -> rx.Component:
                 class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8",
             ),
             rx.el.div(
+                rx.el.button(
+                    rx.icon("bot", class_name="mr-2 h-4 w-4"),
+                    "Generate Schedule",
+                    on_click=State.generate_schedule,
+                    is_loading=State.is_generating_schedule,
+                    class_name="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-orange-600 text-white shadow hover:bg-orange-600/90 h-9 px-4 py-2 mb-6",
+                ),
+                rx.cond(
+                    State.is_generating_schedule,
+                    rx.el.div(
+                        rx.el.progress(
+                            value=State.generation_progress, class_name="w-full"
+                        ),
+                        rx.el.p(
+                            State.generation_message,
+                            class_name="text-sm text-gray-500 mt-2 text-center",
+                        ),
+                        class_name="mb-6 p-4 border rounded-lg bg-gray-50",
+                    ),
+                ),
+            ),
+            rx.el.div(
                 rx.el.div(
                     rx.el.h2(
                         "Teacher Compliance",

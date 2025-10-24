@@ -20,9 +20,15 @@ def teacher_card(teacher: rx.Var[dict]) -> rx.Component:
                         class_name="text-base font-semibold text-gray-800",
                     ),
                     rx.el.p(teacher["email"], class_name="text-sm text-gray-500"),
+                    rx.el.span(
+                        teacher["subject"],
+                        class_name="text-xs font-medium bg-purple-100 text-purple-600 px-2 py-1 rounded-full",
+                    ),
                 ),
                 class_name="flex items-center gap-4",
-            ),
+            )
+        ),
+        rx.el.div(
             rx.el.div(
                 rx.el.button(
                     rx.icon("pencil", class_name="h-4 w-4"),
